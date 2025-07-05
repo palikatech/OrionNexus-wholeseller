@@ -56,6 +56,72 @@ const mockCompanies: Company[] = [
     ownerCitizenship: '12-34-56-78902',
     bankAccountNumber: '2345678901',
     bankName: 'Rastriya Banijya Bank'
+  },
+  {
+    id: '3',
+    name: 'Everest Supply Chain Ltd.',
+    pan: '501234567',
+    vatNumber: 'VAT-501234567',
+    address: 'Bhaktapur, Nepal',
+    phone: '+977-1-4567892',
+    email: 'info@everestsupply.com',
+    registrationNumber: 'REG-2019-003',
+    establishmentDate: '2019-03-10',
+    businessType: 'distributor',
+    ownerName: 'Amit Thapa',
+    ownerCitizenship: '12-34-56-78903',
+    bankAccountNumber: '3456789012',
+    bankName: 'Nepal Investment Bank',
+    licenseNumber: 'LIC-2019-003',
+    licenseExpiryDate: '2024-03-10'
+  },
+  {
+    id: '4',
+    name: 'Mountain Trading Co.',
+    pan: '601234567',
+    vatNumber: 'VAT-601234567',
+    address: 'Patan, Lalitpur',
+    phone: '+977-1-4567893',
+    email: 'info@mountaintrading.com',
+    registrationNumber: 'REG-2022-004',
+    establishmentDate: '2022-04-15',
+    businessType: 'wholesaler',
+    ownerName: 'Priya Gurung',
+    ownerCitizenship: '12-34-56-78904',
+    bankAccountNumber: '4567890123',
+    bankName: 'Himalayan Bank Limited'
+  },
+  {
+    id: '5',
+    name: 'Kathmandu Wholesale Hub',
+    pan: '701234567',
+    vatNumber: 'VAT-701234567',
+    address: 'New Road, Kathmandu',
+    phone: '+977-1-4567894',
+    email: 'info@ktmwholesale.com',
+    registrationNumber: 'REG-2023-005',
+    establishmentDate: '2023-06-10',
+    businessType: 'wholesaler',
+    ownerName: 'Ram Bahadur Thapa',
+    ownerCitizenship: '12-34-56-78905',
+    bankAccountNumber: '5678901234',
+    bankName: 'Standard Chartered Bank'
+  },
+  {
+    id: '6',
+    name: 'Pokhara Wholesale Center',
+    pan: '801234567',
+    vatNumber: 'VAT-801234567',
+    address: 'Lakeside, Pokhara',
+    phone: '+977-61-567890',
+    email: 'info@pokharawholesale.com',
+    registrationNumber: 'REG-2023-006',
+    establishmentDate: '2023-08-15',
+    businessType: 'wholesaler',
+    ownerName: 'Maya Gurung',
+    ownerCitizenship: '12-34-56-78906',
+    bankAccountNumber: '6789012345',
+    bankName: 'Nabil Bank Limited'
   }
 ];
 
@@ -260,7 +326,36 @@ const mockWholesalerRequests: WholesalerRequest[] = [
     products: mockProducts,
     status: 'pending',
     requestDate: '2025-01-15T09:00:00Z',
-    message: 'Request for product partnership'
+    message: 'We would like to establish a partnership with your wholesale business. Please review our product catalog.'
+  },
+  {
+    id: '2',
+    distributorId: '1',
+    distributorName: 'Himalayan Distributors Pvt. Ltd.',
+    wholesalerId: '4',
+    wholesalerName: 'Mountain Trading Co.',
+    products: mockProducts,
+    status: 'approved',
+    requestDate: '2025-01-14T08:00:00Z',
+    responseDate: '2025-01-14T16:00:00Z',
+    selectedProducts: [
+      { productId: '1', quantity: 50 },
+      { productId: '3', quantity: 25 },
+      { productId: '4', quantity: 100 }
+    ],
+    message: 'Looking forward to working together on these product lines.'
+  },
+  {
+    id: '3',
+    distributorId: '3',
+    distributorName: 'Everest Supply Chain Ltd.',
+    wholesalerId: '2',
+    wholesalerName: 'Valley Wholesale Mart',
+    products: mockProducts.slice(0, 4),
+    status: 'rejected',
+    requestDate: '2025-01-13T10:00:00Z',
+    responseDate: '2025-01-13T18:00:00Z',
+    message: 'Partnership request for selected product categories.'
   }
 ];
 
@@ -278,12 +373,12 @@ const mockNotifications: Notification[] = [
   {
     id: '2',
     type: 'wholesaler_request',
-    title: 'New Wholesaler Request',
-    message: 'Valley Wholesale Mart has sent a partnership request',
+    title: 'New Partnership Request',
+    message: 'Himalayan Distributors Pvt. Ltd. has sent a partnership request',
     timestamp: '2025-01-15T09:00:00Z',
     read: false,
     priority: 'medium',
-    wholesaler: 'Valley Wholesale Mart',
+    wholesaler: 'Himalayan Distributors Pvt. Ltd.',
     requestId: '1'
   },
   {
@@ -296,6 +391,17 @@ const mockNotifications: Notification[] = [
     priority: 'medium',
     wholesaler: 'Mountain Trading Co.',
     orderNumber: 'ORD-2025-002'
+  },
+  {
+    id: '4',
+    type: 'wholesaler_request',
+    title: 'Partnership Request Approved',
+    message: 'Mountain Trading Co. has approved your partnership request',
+    timestamp: '2025-01-14T16:00:00Z',
+    read: false,
+    priority: 'medium',
+    wholesaler: 'Mountain Trading Co.',
+    requestId: '2'
   }
 ];
 
@@ -392,7 +498,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useData = () => {
   const context = useContext(DataContext);
   if (context === undefined) {
-    throw new Error('useData must be used within a DataProvider');
+    throw new error('useData must be used within a DataProvider');
   }
   return context;
 };

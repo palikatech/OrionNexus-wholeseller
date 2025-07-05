@@ -7,43 +7,62 @@ import {
   DocumentTextIcon, 
   CreditCardIcon,
   ArrowTrendingUpIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  UserGroupIcon,
+  TruckIcon
 } from '@heroicons/react/24/outline';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
 
 const WholesalerHome: React.FC = () => {
-  const { products, orders } = useData();
+  const { products, orders, wholesalerRequests } = useData();
 
   const todaySales = 8750;
   const monthlyRevenue = 185000;
   const totalInvoices = 24;
   const pendingPayments = 15000;
   const lowStockCount = products.filter(p => p.stock <= p.minStock).length;
+  const pendingRequests = wholesalerRequests.filter(r => r.status === 'pending').length;
 
-  // Mock data for charts
-  const salesData = [
-    { day: 'Mon', sales: 2400, invoices: 8 },
-    { day: 'Tue', sales: 1398, invoices: 5 },
-    { day: 'Wed', sales: 3800, invoices: 12 },
-    { day: 'Thu', sales: 3908, invoices: 9 },
-    { day: 'Fri', sales: 4800, invoices: 15 },
-    { day: 'Sat', sales: 3800, invoices: 11 },
-    { day: 'Sun', sales: 2400, invoices: 7 }
+  // Enhanced chart data for wholesaler business
+  const salesPerformanceData = [
+    { day: 'Mon', sales: 2400, customers: 8, profit: 480, margin: 20 },
+    { day: 'Tue', sales: 1398, customers: 5, profit: 279, margin: 20 },
+    { day: 'Wed', sales: 3800, customers: 12, profit: 760, margin: 20 },
+    { day: 'Thu', sales: 3908, customers: 9, profit: 781, margin: 20 },
+    { day: 'Fri', sales: 4800, customers: 15, profit: 960, margin: 20 },
+    { day: 'Sat', sales: 3800, customers: 11, profit: 760, margin: 20 },
+    { day: 'Sun', sales: 2400, customers: 7, profit: 480, margin: 20 }
+  ];
+
+  const customerSegmentData = [
+    { name: 'Retail Customers', value: 45, revenue: 83250, color: '#3B82F6', growth: '+12%' },
+    { name: 'Small Shops', value: 30, revenue: 55500, color: '#10B981', growth: '+8%' },
+    { name: 'Grocery Stores', value: 15, revenue: 27750, color: '#F59E0B', growth: '+15%' },
+    { name: 'Mini Marts', value: 10, revenue: 18500, color: '#EF4444', growth: '+5%' }
   ];
 
   const topProducts = [
-    { name: 'Wai Wai Noodles', sold: 150, revenue: 3750 },
-    { name: 'Coca Cola', sold: 120, revenue: 4200 },
-    { name: 'Sunsilk Shampoo', sold: 45, revenue: 8100 },
-    { name: 'Tiger Biscuits', sold: 300, revenue: 4500 },
-    { name: 'Cooking Oil', sold: 25, revenue: 6250 }
+    { name: 'Wai Wai Noodles', sold: 150, revenue: 3750, margin: '18%', trend: '+15%', stock: 500 },
+    { name: 'Coca Cola', sold: 120, revenue: 4200, margin: '22%', trend: '+8%', stock: 200 },
+    { name: 'Sunsilk Shampoo', sold: 45, revenue: 8100, margin: '35%', trend: '+25%', stock: 150 },
+    { name: 'Tiger Biscuits', sold: 300, revenue: 4500, margin: '15%', trend: '+12%', stock: 800 },
+    { name: 'Cooking Oil', sold: 25, revenue: 6250, margin: '28%', trend: '+18%', stock: 120 }
   ];
 
   const recentInvoices = [
-    { id: 'INV-2025-024', customer: 'Retail Customer', amount: 850, date: '2025-01-15', status: 'paid' },
-    { id: 'INV-2025-023', customer: 'Grocery Store', amount: 1200, date: '2025-01-15', status: 'pending' },
-    { id: 'INV-2025-022', customer: 'Mini Mart', amount: 650, date: '2025-01-14', status: 'paid' },
-    { id: 'INV-2025-021', customer: 'Local Shop', amount: 950, date: '2025-01-14', status: 'overdue' }
+    { id: 'INV-2025-024', customer: 'Retail Customer', amount: 850, date: '2025-01-15', status: 'paid', paymentMethod: 'khalti' },
+    { id: 'INV-2025-023', customer: 'Grocery Store', amount: 1200, date: '2025-01-15', status: 'pending', paymentMethod: 'bank_transfer' },
+    { id: 'INV-2025-022', customer: 'Mini Mart', amount: 650, date: '2025-01-14', status: 'paid', paymentMethod: 'cash' },
+    { id: 'INV-2025-021', customer: 'Local Shop', amount: 950, date: '2025-01-14', status: 'overdue', paymentMethod: 'esewa' }
+  ];
+
+  const monthlyTrends = [
+    { month: 'Jan', sales: 125000, purchases: 95000, profit: 30000, customers: 180 },
+    { month: 'Feb', sales: 135000, purchases: 105000, profit: 30000, customers: 195 },
+    { month: 'Mar', sales: 148000, purchases: 115000, profit: 33000, customers: 210 },
+    { month: 'Apr', sales: 162000, purchases: 125000, profit: 37000, customers: 225 },
+    { month: 'May', sales: 178000, purchases: 135000, profit: 43000, customers: 240 },
+    { month: 'Jun', sales: 195000, purchases: 145000, profit: 50000, customers: 255 }
   ];
 
   return (
@@ -52,10 +71,28 @@ const WholesalerHome: React.FC = () => {
       <div className="bg-gradient-to-r from-blue-600 to-emerald-600 rounded-2xl p-6 text-white">
         <h1 className="text-3xl font-bold mb-2">Welcome back, Wholesaler!</h1>
         <p className="text-blue-100">Here's your business overview for today.</p>
+        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white/10 rounded-lg p-3">
+            <p className="text-blue-100 text-sm">Daily Target</p>
+            <p className="text-2xl font-bold">85%</p>
+          </div>
+          <div className="bg-white/10 rounded-lg p-3">
+            <p className="text-blue-100 text-sm">Customer Retention</p>
+            <p className="text-2xl font-bold">94%</p>
+          </div>
+          <div className="bg-white/10 rounded-lg p-3">
+            <p className="text-blue-100 text-sm">Avg Order Value</p>
+            <p className="text-2xl font-bold">NPR 1,250</p>
+          </div>
+          <div className="bg-white/10 rounded-lg p-3">
+            <p className="text-blue-100 text-sm">Profit Margin</p>
+            <p className="text-2xl font-bold">22.5%</p>
+          </div>
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <StatsCard
           title="Today's Sales"
           value={`NPR ${todaySales.toLocaleString()}`}
@@ -88,52 +125,123 @@ const WholesalerHome: React.FC = () => {
           icon={<ExclamationTriangleIcon className="h-6 w-6" />}
           color="red"
         />
+        <StatsCard
+          title="Partnership Requests"
+          value={pendingRequests}
+          icon={<UserGroupIcon className="h-6 w-6" />}
+          color="indigo"
+        />
       </div>
 
-      {/* Charts Section */}
+      {/* Enhanced Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Sales Trend */}
+        {/* Sales & Profit Trend */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Sales Trend</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Sales & Profit</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={salesData}>
+            <AreaChart data={salesPerformanceData}>
+              <defs>
+                <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
+                </linearGradient>
+                <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="day" />
               <YAxis />
-              <Tooltip />
+              <Tooltip formatter={(value) => `NPR ${value.toLocaleString()}`} />
               <Legend />
-              <Line type="monotone" dataKey="sales" stroke="#3B82F6" strokeWidth={2} />
-            </LineChart>
+              <Area type="monotone" dataKey="sales" stroke="#3B82F6" fillOpacity={1} fill="url(#colorSales)" />
+              <Area type="monotone" dataKey="profit" stroke="#10B981" fillOpacity={1} fill="url(#colorProfit)" />
+            </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Top Products */}
+        {/* Customer Segments */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Selling Products</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={topProducts}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="sold" fill="#10B981" />
-            </BarChart>
-          </ResponsiveContainer>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer Segments</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie
+                  data={customerSegmentData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={40}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {customerSegmentData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="space-y-2">
+              {customerSegmentData.map((segment, index) => (
+                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: segment.color }}></div>
+                    <span className="text-sm font-medium text-gray-900">{segment.name}</span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-gray-900">NPR {segment.revenue.toLocaleString()}</p>
+                    <p className="text-xs text-green-600">{segment.growth}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Tables Section */}
+      {/* Business Performance Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Products Performance */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Performing Products</h3>
+          <div className="space-y-3">
+            {topProducts.map((product, index) => (
+              <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-green-50 rounded-lg border border-gray-100">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-green-600 font-bold text-sm">{index + 1}</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">{product.name}</p>
+                    <p className="text-sm text-gray-600">{product.sold} sold • {product.margin} margin • {product.stock} in stock</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-green-600">NPR {product.revenue.toLocaleString()}</p>
+                  <p className="text-sm text-green-600">{product.trend}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Recent Invoices */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Invoices</h3>
           <div className="space-y-3">
             {recentInvoices.map((invoice) => (
-              <div key={invoice.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">{invoice.id}</p>
-                  <p className="text-sm text-gray-500">{invoice.customer}</p>
-                  <p className="text-xs text-gray-400">{new Date(invoice.date).toLocaleDateString()}</p>
+              <div key={invoice.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <DocumentTextIcon className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{invoice.id}</p>
+                    <p className="text-sm text-gray-600">{invoice.customer}</p>
+                    <p className="text-xs text-gray-400">{new Date(invoice.date).toLocaleDateString()}</p>
+                  </div>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-gray-900">NPR {invoice.amount.toLocaleString()}</p>
@@ -149,29 +257,23 @@ const WholesalerHome: React.FC = () => {
             ))}
           </div>
         </div>
+      </div>
 
-        {/* Product Performance */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Product Performance</h3>
-          <div className="space-y-3">
-            {topProducts.map((product, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 font-semibold text-sm">{index + 1}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{product.name}</p>
-                    <p className="text-sm text-gray-500">{product.sold} units sold</p>
-                  </div>
-                </div>
-                <p className="font-semibold text-green-600">NPR {product.revenue.toLocaleString()}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Monthly Business Trends */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Business Trends</h3>
+        <ResponsiveContainer width="100%" height={400}>
+          <LineChart data={monthlyTrends}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" />
+            <YAxis />
+            <Tooltip formatter={(value) => `NPR ${value.toLocaleString()}`} />
+            <Legend />
+            <Line type="monotone" dataKey="sales" stroke="#3B82F6" strokeWidth={3} />
+            <Line type="monotone" dataKey="purchases" stroke="#EF4444" strokeWidth={2} />
+            <Line type="monotone" dataKey="profit" stroke="#10B981" strokeWidth={3} />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Quick Actions */}

@@ -31,7 +31,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: 'Inventory', href: '/wholesaler/inventory', icon: '🏪' },
     { name: 'Invoices', href: '/wholesaler/invoices', icon: '🧾' },
     { name: 'Payments', href: '/wholesaler/payments', icon: '💰' },
-    { name: 'Reports', href: '/wholesaler/reports', icon: '📈' }
+    { name: 'Reports', href: '/wholesaler/reports', icon: '📈' },
+    { name: 'Requests', href: '/wholesaler/requests', icon: '📨' }
   ];
 
   const navItems = user?.role === 'distributor' ? distributorNavItems : wholesalerNavItems;
