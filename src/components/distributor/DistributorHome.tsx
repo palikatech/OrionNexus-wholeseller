@@ -7,17 +7,19 @@ import {
   UserGroupIcon, 
   ChartBarIcon,
   ExclamationTriangleIcon,
-  TruckIcon
+  TruckIcon,
+  BellIcon
 } from '@heroicons/react/24/outline';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 const DistributorHome: React.FC = () => {
-  const { products, orders } = useData();
+  const { products, orders, notifications } = useData();
 
   const lowStockProducts = products.filter(p => p.stock <= p.minStock);
   const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
   const activeWholesalers = 4; // Mock data
+  const unreadNotifications = notifications.filter(n => !n.read).length;
 
   // Mock chart data
   const salesData = [
@@ -55,7 +57,7 @@ const DistributorHome: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatsCard
           title="Total Revenue"
           value={`NPR ${totalRevenue.toLocaleString()}`}
@@ -83,7 +85,110 @@ const DistributorHome: React.FC = () => {
           icon={<ExclamationTriangleIcon className="h-6 w-6" />}
           color="red"
         />
+        <StatsCard
+          title="Notifications"
+          value={unreadNotifications}
+          icon={<BellIcon className="h-6 w-6" />}
+          color="yellow"
+        />
       </div>
+
+      {/* Notification Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Selling Products */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Selling Products</h3>
+          <div className="space-y-3">
+            {topProducts.slice(0, 5).map((product, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 font-semibold text-sm">{index + 1}</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{product.name}</p>
+                    <p className="text-sm text-gray-500">{product.sales} units sold</p>
+                  </div>
+                </div>
+                <p className="font-semibold text-green-600">NPR {product.revenue.toLocaleString()}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Orders */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Orders</h3>
+          <div className="space-y-3">
+            {orders.slice(0, 5).map((order) => (
+              <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium text-gray-900">{order.orderNumber}</p>
+                  <p className="text-sm text-gray-500">{order.customerName}</p>
+                  <p className="text-xs text-gray-400">{new Date(order.date).toLocaleDateString()}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-gray-900">NPR {order.total.toLocaleString()}</p>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                    order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
+                    order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {order.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Low Stock Alert with Wholesaler Details */}
+      {lowStockProducts.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+          <div className="flex items-center space-x-2 mb-4">
+            <ExclamationTriangleIcon className="h-5 w-5 text-red-600" />
+            <h3 className="text-lg font-semibold text-red-900">Low Stock Alert</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="border-b border-red-200">
+                  <th className="text-left py-2 text-sm font-medium text-red-700">Product Name</th>
+                  <th className="text-left py-2 text-sm font-medium text-red-700">Company</th>
+                  <th className="text-left py-2 text-sm font-medium text-red-700">Remaining Qty</th>
+                  <th className="text-left py-2 text-sm font-medium text-red-700">Min Stock</th>
+                  <th className="text-left py-2 text-sm font-medium text-red-700">Order Taken</th>
+                  <th className="text-left py-2 text-sm font-medium text-red-700">Order Status</th>
+                  <th className="text-left py-2 text-sm font-medium text-red-700">Wholesaler</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lowStockProducts.map((product) => (
+                  <tr key={product.id} className="border-b border-red-100">
+                    <td className="py-3 text-sm text-red-900">{product.name}</td>
+                    <td className="py-3 text-sm text-red-700">{product.brand}</td>
+                    <td className="py-3 text-sm font-medium text-red-900">{product.stock}</td>
+                    <td className="py-3 text-sm text-red-700">{product.minStock}</td>
+                    <td className="py-3 text-sm">
+                      <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                        Pending
+                      </span>
+                    </td>
+                    <td className="py-3 text-sm">
+                      <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
+                        Not Ordered
+                      </span>
+                    </td>
+                    <td className="py-3 text-sm text-red-700">Valley Wholesale Mart</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -126,72 +231,6 @@ const DistributorHome: React.FC = () => {
           </ResponsiveContainer>
         </div>
       </div>
-
-      {/* Tables Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Products */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Selling Products</h3>
-          <div className="space-y-3">
-            {topProducts.map((product, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">{product.name}</p>
-                  <p className="text-sm text-gray-500">{product.sales} units sold</p>
-                </div>
-                <p className="font-semibold text-green-600">NPR {product.revenue.toLocaleString()}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Orders */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Orders</h3>
-          <div className="space-y-3">
-            {orders.slice(0, 5).map((order) => (
-              <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">{order.orderNumber}</p>
-                  <p className="text-sm text-gray-500">{order.customerName}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-gray-900">NPR {order.total.toLocaleString()}</p>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
-                    order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
-                    order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {order.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Low Stock Alert */}
-      {lowStockProducts.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-          <div className="flex items-center space-x-2 mb-4">
-            <ExclamationTriangleIcon className="h-5 w-5 text-red-600" />
-            <h3 className="text-lg font-semibold text-red-900">Low Stock Alert</h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {lowStockProducts.map((product) => (
-              <div key={product.id} className="bg-white p-4 rounded-lg border border-red-200">
-                <h4 className="font-medium text-gray-900">{product.name}</h4>
-                <p className="text-sm text-gray-600">{product.sku}</p>
-                <p className="text-sm text-red-600 font-medium mt-1">
-                  Stock: {product.stock} / Min: {product.minStock}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

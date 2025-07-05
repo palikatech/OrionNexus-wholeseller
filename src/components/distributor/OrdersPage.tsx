@@ -1,17 +1,32 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
-import { EyeIcon, CheckCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../../context/AuthContext';
+import { EyeIcon, CheckCircleIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
+import { Order, OrderItem } from '../../types';
 
 const OrdersPage: React.FC = () => {
-  const { orders, updateOrderStatus } = useData();
+  const { orders, updateOrderStatus, addOrder, products, companies } = useData();
+  const { user } = useAuth();
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('');
+
+  // Create Order Form State
+  const [createOrderForm, setCreateOrderForm] = useState({
+    customerId: '',
+    customerName: '',
+    deliveryAddress: '',
+    paymentTerms: 'Net 30 days',
+    products: [] as { productId: string; quantity: number; price: number }[]
+  });
 
   const filteredOrders = orders.filter(order => 
     !filterStatus || order.status === filterStatus
   );
+
+  const wholesalers = companies.filter(c => c.businessType === 'wholesaler');
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -35,6 +50,87 @@ const OrdersPage: React.FC = () => {
     toast.success(`Order status updated to ${newStatus}`);
   };
 
+  const handleCreateOrder = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (createOrderForm.products.length === 0) {
+      toast.error('Please add at least one product');
+      return;
+    }
+
+    const orderProducts: OrderItem[] = createOrderForm.products.map(p => {
+      const product = products.find(prod => prod.id === p.productId);
+      const total = p.quantity * p.price;
+      const vatAmount = total * (product?.vatRate || 0) / 100;
+      
+      return {
+        productId: p.productId,
+        productName: product?.name || '',
+        quantity: p.quantity,
+        price: p.price,
+        total,
+        vatAmount
+      };
+    });
+
+    const subtotal = orderProducts.reduce((sum, p) => sum + p.total, 0);
+    const totalVat = orderProducts.reduce((sum, p) => sum + p.vatAmount, 0);
+    const total = subtotal + totalVat;
+
+    const newOrder: Omit<Order, 'id'> = {
+      orderNumber: `ORD-${Date.now()}`,
+      customerId: createOrderForm.customerId,
+      customerName: createOrderForm.customerName,
+      products: orderProducts,
+      total,
+      status: 'pending',
+      date: new Date().toISOString(),
+      invoiceNumber: `INV-${Date.now()}`,
+      vatAmount: totalVat,
+      deliveryAddress: createOrderForm.deliveryAddress,
+      paymentTerms: createOrderForm.paymentTerms,
+      createdBy: user?.id || ''
+    };
+
+    addOrder(newOrder);
+    toast.success('Order created successfully!');
+    setShowCreateModal(false);
+    resetCreateForm();
+  };
+
+  const resetCreateForm = () => {
+    setCreateOrderForm({
+      customerId: '',
+      customerName: '',
+      deliveryAddress: '',
+      paymentTerms: 'Net 30 days',
+      products: []
+    });
+  };
+
+  const addProductToOrder = () => {
+    setCreateOrderForm(prev => ({
+      ...prev,
+      products: [...prev.products, { productId: '', quantity: 1, price: 0 }]
+    }));
+  };
+
+  const updateOrderProduct = (index: number, field: string, value: any) => {
+    setCreateOrderForm(prev => ({
+      ...prev,
+      products: prev.products.map((p, i) => 
+        i === index ? { ...p, [field]: value } : p
+      )
+    }));
+  };
+
+  const removeOrderProduct = (index: number) => {
+    setCreateOrderForm(prev => ({
+      ...prev,
+      products: prev.products.filter((_, i) => i !== index)
+    }));
+  };
+
   const orderStats = {
     total: orders.length,
     pending: orders.filter(o => o.status === 'pending').length,
@@ -47,9 +143,18 @@ const OrdersPage: React.FC = () => {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-          Export Orders
-        </button>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+          >
+            <PlusIcon className="h-5 w-5" />
+            <span>Create Order</span>
+          </button>
+          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            Export Orders
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -193,6 +298,169 @@ const OrdersPage: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Create Order Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Create New Order</h2>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateOrder} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Wholesaler *</label>
+                  <select
+                    required
+                    value={createOrderForm.customerId}
+                    onChange={(e) => {
+                      const selectedWholesaler = wholesalers.find(w => w.id === e.target.value);
+                      setCreateOrderForm(prev => ({
+                        ...prev,
+                        customerId: e.target.value,
+                        customerName: selectedWholesaler?.name || ''
+                      }));
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select Wholesaler</option>
+                    {wholesalers.map(wholesaler => (
+                      <option key={wholesaler.id} value={wholesaler.id}>
+                        {wholesaler.name} - {wholesaler.pan}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Terms *</label>
+                  <select
+                    required
+                    value={createOrderForm.paymentTerms}
+                    onChange={(e) => setCreateOrderForm(prev => ({ ...prev, paymentTerms: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="Net 15 days">Net 15 days</option>
+                    <option value="Net 30 days">Net 30 days</option>
+                    <option value="Net 45 days">Net 45 days</option>
+                    <option value="Cash on Delivery">Cash on Delivery</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Address *</label>
+                <textarea
+                  required
+                  value={createOrderForm.deliveryAddress}
+                  onChange={(e) => setCreateOrderForm(prev => ({ ...prev, deliveryAddress: e.target.value }))}
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">Products</h3>
+                  <button
+                    type="button"
+                    onClick={addProductToOrder}
+                    className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                  >
+                    Add Product
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {createOrderForm.products.map((orderProduct, index) => (
+                    <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-3 p-3 border border-gray-200 rounded-lg">
+                      <div className="md:col-span-2">
+                        <select
+                          required
+                          value={orderProduct.productId}
+                          onChange={(e) => {
+                            const product = products.find(p => p.id === e.target.value);
+                            updateOrderProduct(index, 'productId', e.target.value);
+                            updateOrderProduct(index, 'price', product?.price || 0);
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Select Product</option>
+                          {products.map(product => (
+                            <option key={product.id} value={product.id}>
+                              {product.name} - {product.sku}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <input
+                          type="number"
+                          required
+                          min="1"
+                          placeholder="Quantity"
+                          value={orderProduct.quantity}
+                          onChange={(e) => updateOrderProduct(index, 'quantity', parseInt(e.target.value))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="number"
+                          required
+                          min="0"
+                          step="0.01"
+                          placeholder="Price"
+                          value={orderProduct.price}
+                          onChange={(e) => updateOrderProduct(index, 'price', parseFloat(e.target.value))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-sm font-medium text-gray-900">
+                          NPR {(orderProduct.quantity * orderProduct.price).toLocaleString()}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeOrderProduct(index)}
+                          className="ml-2 text-red-600 hover:text-red-800"
+                        >
+                          <XMarkIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex space-x-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    resetCreateForm();
+                  }}
+                  className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Create Order
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Order Details Modal */}
       {showOrderModal && selectedOrder && (
