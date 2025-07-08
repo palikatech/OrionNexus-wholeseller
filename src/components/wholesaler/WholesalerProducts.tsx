@@ -1,42 +1,53 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
-import { PlusIcon, MagnifyingGlassIcon, QrCodeIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, MagnifyingGlassIcon, EyeIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 
 const WholesalerProducts: React.FC = () => {
   const { products } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
-  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
-  const [scanResult, setScanResult] = useState('');
+  const [filterBrand, setFilterBrand] = useState('');
+  const [filterDistributor, setFilterDistributor] = useState('');
+  const [sortBy, setSortBy] = useState('name');
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [showProductModal, setShowProductModal] = useState(false);
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.barcode.includes(searchTerm)
-  ).filter(product => !filterCategory || product.category === filterCategory);
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.sku.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !filterCategory || product.category === filterCategory;
+    const matchesBrand = !filterBrand || product.brand === filterBrand;
+    const matchesDistributor = !filterDistributor || product.distributorId === filterDistributor;
+    
+    return matchesSearch && matchesCategory && matchesBrand && matchesDistributor;
+  }).sort((a, b) => {
+    switch (sortBy) {
+      case 'name':
+        return a.name.localeCompare(b.name);
+      case 'price':
+        return b.price - a.price;
+      case 'stock':
+        return b.stock - a.stock;
+      case 'brand':
+        return a.brand.localeCompare(b.brand);
+      default:
+        return 0;
+    }
+  });
 
   const categories = [...new Set(products.map(p => p.category))];
+  const brands = [...new Set(products.map(p => p.brand))];
+  const distributors = [...new Set(products.map(p => p.distributorId))].filter(Boolean);
 
-  const handleBarcodeSearch = (barcode: string) => {
-    const product = products.find(p => p.barcode === barcode);
-    if (product) {
-      setSearchTerm(barcode);
-      toast.success(`Found product: ${product.name}`);
-    } else {
-      toast.error('Product not found');
-    }
-    setShowBarcodeScanner(false);
+  const handleViewProduct = (product: any) => {
+    setSelectedProduct(product);
+    setShowProductModal(true);
   };
 
-  // Mock barcode scanner simulation
-  const simulateBarcodeScanner = () => {
-    const mockBarcodes = products.map(p => p.barcode);
-    const randomBarcode = mockBarcodes[Math.floor(Math.random() * mockBarcodes.length)];
-    setScanResult(randomBarcode);
-    setTimeout(() => {
-      handleBarcodeSearch(randomBarcode);
-    }, 2000);
+  const addToSales = (product: any) => {
+    // This will be used to add product to sales section
+    toast.success(`${product.name} added to sales`);
   };
 
   return (
@@ -49,121 +60,264 @@ const WholesalerProducts: React.FC = () => {
         </button>
       </div>
 
-      {/* Search and Filter */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <div className="flex items-center space-x-4">
-          <div className="relative flex-1">
-            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-3" />
-            <input
-              type="text"
-              placeholder="Search products, SKU, or barcode..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+      {/* Enhanced Filters */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+          <div className="lg:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Search Products</label>
+            <div className="relative">
+              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-3" />
+              <input
+                type="text"
+                placeholder="Search by name or SKU..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
           </div>
-          <button
-            onClick={() => setShowBarcodeScanner(true)}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-          >
-            <QrCodeIcon className="h-5 w-5" />
-            <span>Scan Barcode</span>
-          </button>
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">All Categories</option>
-            {categories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">All Categories</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+            <select
+              value={filterBrand}
+              onChange={(e) => setFilterBrand(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">All Brands</option>
+              {brands.map(brand => (
+                <option key={brand} value={brand}>{brand}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Distributor</label>
+            <select
+              value={filterDistributor}
+              onChange={(e) => setFilterDistributor(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">All Distributors</option>
+              {distributors.map(dist => (
+                <option key={dist} value={dist}>Distributor {dist}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="name">Name</option>
+              <option value="price">Price</option>
+              <option value="stock">Stock</option>
+              <option value="brand">Brand</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredProducts.map((product) => (
-          <div key={product.id} className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-            <div className="aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="p-4">
-              <h3 className="font-semibold text-gray-900 mb-1">{product.name}</h3>
-              <p className="text-sm text-gray-500 mb-2">{product.brand}</p>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-lg font-bold text-green-600">NPR {product.price}</span>
-                <span className={`text-sm px-2 py-1 rounded-full ${
-                  product.stock <= product.minStock 
-                    ? 'bg-red-100 text-red-800' 
-                    : 'bg-green-100 text-green-800'
-                }`}>
-                  {product.stock} in stock
-                </span>
-              </div>
-              <div className="space-y-1 text-xs text-gray-600">
-                <p>SKU: {product.sku}</p>
-                <p>Barcode: {product.barcode}</p>
-                <p>Category: {product.category}</p>
-              </div>
-              <div className="mt-3 flex space-x-2">
-                <button className="flex-1 bg-blue-50 text-blue-600 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">
-                  Add to Cart
-                </button>
-                <button className="flex-1 bg-green-50 text-green-600 px-3 py-2 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium">
-                  Quick Sale
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
+      {/* Products Table */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredProducts.map((product) => (
+                <tr key={product.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <img className="h-10 w-10 rounded-lg object-cover" src={product.image} alt={product.name} />
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                        <div className="text-sm text-gray-500">{product.description}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.sku}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.brand}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.category}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    NPR {product.price.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.stock}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      product.stock <= product.minStock 
+                        ? 'bg-red-100 text-red-800' 
+                        : 'bg-green-100 text-green-800'
+                    }`}>
+                      {product.stock <= product.minStock ? 'Low Stock' : 'In Stock'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                    <button
+                      onClick={() => handleViewProduct(product)}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      <EyeIcon className="h-4 w-4 inline mr-1" />
+                      View
+                    </button>
+                    <button
+                      onClick={() => addToSales(product)}
+                      className="text-green-600 hover:text-green-900"
+                    >
+                      Add to Sales
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Barcode Scanner Modal */}
-      {showBarcodeScanner && (
+      {/* Product Details Modal */}
+      {showProductModal && selectedProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-xl font-bold mb-4">Barcode Scanner</h2>
-            <div className="bg-gray-100 rounded-lg p-8 text-center mb-4">
-              <QrCodeIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-4">Position the barcode within the frame</p>
-              {scanResult && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                  <p className="text-green-800 font-mono text-sm">Scanned: {scanResult}</p>
-                </div>
-              )}
+          <div className="bg-white rounded-lg max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Product Details</h2>
               <button
-                onClick={simulateBarcodeScanner}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={() => setShowProductModal(false)}
+                className="text-gray-400 hover:text-gray-600"
               >
-                Simulate Scan
+                <XMarkIcon className="h-6 w-6" />
               </button>
             </div>
-            <div className="flex space-x-4">
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <img
+                  src={selectedProduct.image}
+                  alt={selectedProduct.name}
+                  className="w-full h-64 object-cover rounded-lg"
+                />
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">{selectedProduct.name}</h3>
+                  <p className="text-lg text-gray-600">{selectedProduct.brand}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">SKU</p>
+                    <p className="text-gray-900">{selectedProduct.sku}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Barcode</p>
+                    <p className="text-gray-900">{selectedProduct.barcode}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Category</p>
+                    <p className="text-gray-900">{selectedProduct.category}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Price</p>
+                    <p className="text-green-600 font-semibold text-lg">NPR {selectedProduct.price.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Current Stock</p>
+                    <p className="text-gray-900">{selectedProduct.stock} units</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Min Stock</p>
+                    <p className="text-gray-900">{selectedProduct.minStock} units</p>
+                  </div>
+                </div>
+
+                {selectedProduct.description && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Description</p>
+                    <p className="text-gray-900">{selectedProduct.description}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-3">Manufacturer Details</h4>
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Name</p>
+                    <p className="text-gray-900">{selectedProduct.manufacturerName}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Address</p>
+                    <p className="text-gray-900">{selectedProduct.manufacturerAddress}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-3">Product Specifications</h4>
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">HS Code</p>
+                    <p className="text-gray-900">{selectedProduct.hsCode}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">VAT Rate</p>
+                    <p className="text-gray-900">{selectedProduct.vatRate}%</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Unit of Measure</p>
+                    <p className="text-gray-900">{selectedProduct.unitOfMeasure}</p>
+                  </div>
+                  {selectedProduct.netWeight && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Net Weight</p>
+                      <p className="text-gray-900">{selectedProduct.netWeight}g</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex space-x-4">
               <button
-                onClick={() => {
-                  setShowBarcodeScanner(false);
-                  setScanResult('');
-                }}
-                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                onClick={() => addToSales(selectedProduct)}
+                className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
               >
-                Cancel
+                Add to Sales
               </button>
               <button
-                onClick={() => {
-                  if (scanResult) {
-                    handleBarcodeSearch(scanResult);
-                  }
-                }}
-                disabled={!scanResult}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => setShowProductModal(false)}
+                className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors"
               >
-                Search Product
+                Close
               </button>
             </div>
           </div>
@@ -179,7 +333,7 @@ const WholesalerProducts: React.FC = () => {
             </svg>
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-          <p className="text-gray-500">Try adjusting your search criteria or add new products to your inventory.</p>
+          <p className="text-gray-500">Try adjusting your search criteria or filters.</p>
         </div>
       )}
     </div>

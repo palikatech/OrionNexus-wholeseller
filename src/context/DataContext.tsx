@@ -412,6 +412,37 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
   const [companies, setCompanies] = useState<Company[]>(mockCompanies);
 
+  // Enhanced notification system
+  const checkAndNotifyLowStock = (productId: string, newStock: number) => {
+    const product = products.find(p => p.id === productId);
+    if (product && newStock <= product.minStock) {
+      // Add notification for wholesaler
+      addNotification({
+        type: 'low_stock',
+        title: 'Low Stock Alert',
+        message: `${product.name} stock is running low (${newStock} units remaining)`,
+        timestamp: new Date().toISOString(),
+        read: false,
+        priority: 'high',
+        product: product.name
+      });
+      
+      // Add notification for distributor (if product has distributorId)
+      if (product.distributorId) {
+        addNotification({
+          type: 'low_stock',
+          title: 'Wholesaler Low Stock Alert',
+          message: `${product.name} is running low at wholesaler (${newStock} units remaining)`,
+          timestamp: new Date().toISOString(),
+          read: false,
+          priority: 'high',
+          product: product.name,
+          wholesaler: 'Wholesaler'
+        });
+      }
+    }
+  };
+
   const addProduct = (product: Omit<Product, 'id'>) => {
     const newProduct = {
       ...product,
@@ -421,7 +452,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateProduct = (id: string, updates: Partial<Product>) => {
+    const oldProduct = products.find(p => p.id === id);
     setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+    
+    // Check for low stock if stock was updated
+    if (updates.stock !== undefined && oldProduct) {
+      checkAndNotifyLowStock(id, updates.stock);
+    }
   };
 
   const deleteProduct = (id: string) => {
@@ -498,7 +535,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useData = () => {
   const context = useContext(DataContext);
   if (context === undefined) {
-    throw new error('useData must be used within a DataProvider');
+    throw new Error('useData must be used within a DataProvider');
   }
   return context;
 };
