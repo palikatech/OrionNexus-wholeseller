@@ -1,6 +1,23 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { 
+  HomeIcon, 
+  CubeIcon, 
+  BuildingStorefrontIcon, 
+  ClipboardDocumentListIcon, 
+  BuildingOfficeIcon, 
+  CreditCardIcon, 
+  ChartBarIcon, 
+  BellIcon,
+  ShoppingCartIcon,
+  DocumentTextIcon,
+  ArchiveBoxIcon,
+  ReceiptPercentIcon,
+  DocumentChartBarIcon,
+  EnvelopeIcon,
+  HandshakeIcon
+} from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
 interface SidebarProps {
@@ -13,27 +30,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
 
   const distributorNavItems = [
-    { name: 'Dashboard', href: '/distributor/dashboard', icon: '📊' },
-    { name: 'Products', href: '/distributor/products', icon: '📦' },
-    { name: 'Inventory', href: '/distributor/inventory', icon: '🏪' },
-    { name: 'Orders', href: '/distributor/orders', icon: '📋' },
-    { name: 'Wholesalers', href: '/distributor/wholesalers', icon: '🏢' },
-    { name: 'Payments', href: '/distributor/payments', icon: '💰' },
-    { name: 'Reports', href: '/distributor/reports', icon: '📈' },
-    { name: 'Notifications', href: '/distributor/notifications', icon: '🔔' }
+    { name: 'Dashboard', href: '/distributor/dashboard', icon: HomeIcon },
+    { name: 'Products', href: '/distributor/products', icon: CubeIcon },
+    { name: 'Inventory', href: '/distributor/inventory', icon: ArchiveBoxIcon },
+    { name: 'Orders', href: '/distributor/orders', icon: ClipboardDocumentListIcon },
+    { name: 'Wholesalers', href: '/distributor/wholesalers', icon: BuildingOfficeIcon },
+    { name: 'Payments', href: '/distributor/payments', icon: CreditCardIcon },
+    { name: 'Reports', href: '/distributor/reports', icon: ChartBarIcon },
+    { name: 'Notifications', href: '/distributor/notifications', icon: BellIcon }
   ];
 
   const wholesalerNavItems = [
-    { name: 'Dashboard', href: '/wholesaler/dashboard', icon: '📊' },
-    { name: 'Products', href: '/wholesaler/products', icon: '📦' },
-    { name: 'Partnerships', href: '/wholesaler/partnerships', icon: '🤝' },
-    { name: 'Sales', href: '/wholesaler/sales', icon: '💳' },
-    { name: 'Purchase Orders', href: '/wholesaler/purchase-orders', icon: '📝' },
-    { name: 'Inventory', href: '/wholesaler/inventory', icon: '🏪' },
-    { name: 'Invoices', href: '/wholesaler/invoices', icon: '🧾' },
-    { name: 'Payments', href: '/wholesaler/payments', icon: '💰' },
-    { name: 'Reports', href: '/wholesaler/reports', icon: '📈' },
-    { name: 'Requests', href: '/wholesaler/requests', icon: '📨' }
+    { name: 'Dashboard', href: '/wholesaler/dashboard', icon: HomeIcon },
+    { name: 'Products', href: '/wholesaler/products', icon: CubeIcon },
+    { name: 'Partnerships', href: '/wholesaler/partnerships', icon: HandshakeIcon },
+    { name: 'Sales', href: '/wholesaler/sales', icon: ShoppingCartIcon },
+    { name: 'Purchase Orders', href: '/wholesaler/purchase-orders', icon: DocumentTextIcon },
+    { name: 'Inventory', href: '/wholesaler/inventory', icon: ArchiveBoxIcon },
+    { name: 'Invoices', href: '/wholesaler/invoices', icon: ReceiptPercentIcon },
+    { name: 'Payments', href: '/wholesaler/payments', icon: CreditCardIcon },
+    { name: 'Reports', href: '/wholesaler/reports', icon: DocumentChartBarIcon },
+    { name: 'Requests', href: '/wholesaler/requests', icon: EnvelopeIcon }
   ];
 
   const navItems = user?.role === 'distributor' ? distributorNavItems : wholesalerNavItems;
@@ -79,7 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 )}
               >
-                <span className="text-lg mr-3">{item.icon}</span>
+                <item.icon className="h-5 w-5 mr-3" />
                 {item.name}
               </NavLink>
             ))}
