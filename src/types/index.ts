@@ -111,4 +111,6 @@ export interface Notification {
   orderNumber?: string;
   amount?: number;
   requestId?: string;
+  distributorId?: string;
+  wholesalerId?: string;
 }

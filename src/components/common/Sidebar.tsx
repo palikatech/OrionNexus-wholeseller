@@ -26,6 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const wholesalerNavItems = [
     { name: 'Dashboard', href: '/wholesaler/dashboard', icon: '📊' },
     { name: 'Products', href: '/wholesaler/products', icon: '📦' },
+    { name: 'Partnerships', href: '/wholesaler/partnerships', icon: '🤝' },
     { name: 'Sales', href: '/wholesaler/sales', icon: '💳' },
     { name: 'Purchase Orders', href: '/wholesaler/purchase-orders', icon: '📝' },
     { name: 'Inventory', href: '/wholesaler/inventory', icon: '🏪' },

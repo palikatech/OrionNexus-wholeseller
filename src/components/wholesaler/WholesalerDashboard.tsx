@@ -11,6 +11,7 @@ import InvoicesPage from './InvoicesPage';
 import WholesalerPayments from './WholesalerPayments';
 import WholesalerReports from './WholesalerReports';
 import WholesalerRequests from './WholesalerRequests';
+import PartnershipDetails from './PartnershipDetails';
 
 const WholesalerDashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -33,6 +34,7 @@ const WholesalerDashboard: React.FC = () => {
             <Route path="payments" element={<WholesalerPayments />} />
             <Route path="reports" element={<WholesalerReports />} />
             <Route path="requests" element={<WholesalerRequests />} />
+            <Route path="partnerships" element={<PartnershipDetails />} />
           </Routes>
         </main>
       </div>

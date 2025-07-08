@@ -1,54 +1,17 @@
 import React, { useState } from 'react';
+import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
 import { PlusIcon, EyeIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 
 const PurchaseOrdersPage: React.FC = () => {
+  const { orders, updateOrderStatus } = useData();
+  const { user } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
-  // Mock purchase orders data
-  const purchaseOrders = [
-    {
-      id: 'PO-2025-001',
-      distributor: 'Himalayan Distributors Pvt. Ltd.',
-      date: '2025-01-15',
-      status: 'pending',
-      items: [
-        { product: 'Wai Wai Noodles - Chicken', quantity: 200, unitPrice: 20, total: 4000 },
-        { product: 'Coca Cola - 250ml', quantity: 150, unitPrice: 30, total: 4500 }
-      ],
-      total: 8500,
-      expectedDelivery: '2025-01-20',
-      notes: 'Urgent order for weekend stock'
-    },
-    {
-      id: 'PO-2025-002',
-      distributor: 'Everest Supply Chain Ltd.',
-      date: '2025-01-14',
-      status: 'approved',
-      items: [
-        { product: 'Sunsilk Shampoo - 200ml', quantity: 50, unitPrice: 150, total: 7500 },
-        { product: 'Tiger Biscuits', quantity: 100, unitPrice: 12, total: 1200 }
-      ],
-      total: 8700,
-      expectedDelivery: '2025-01-19',
-      notes: 'Regular monthly order'
-    },
-    {
-      id: 'PO-2025-003',
-      distributor: 'Himalayan Distributors Pvt. Ltd.',
-      date: '2025-01-13',
-      status: 'delivered',
-      items: [
-        { product: 'Cooking Oil - Fortune', quantity: 30, unitPrice: 200, total: 6000 },
-        { product: 'Moong Daal', quantity: 40, unitPrice: 100, total: 4000 }
-      ],
-      total: 10000,
-      expectedDelivery: '2025-01-18',
-      actualDelivery: '2025-01-17',
-      notes: 'Delivered early'
-    }
-  ];
+  // Filter orders for current wholesaler (purchase orders are orders created by wholesaler)
+  const purchaseOrders = orders.filter(order => order.createdBy === user?.id);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -70,9 +33,14 @@ const PurchaseOrdersPage: React.FC = () => {
     setShowCreateModal(false);
   };
 
+  const handleStatusUpdate = (orderId: string, newStatus: string) => {
+    updateOrderStatus(orderId, newStatus as any);
+    toast.success(`Order status updated to ${newStatus}`);
+  };
+
   const totalOrders = purchaseOrders.length;
   const pendingOrders = purchaseOrders.filter(po => po.status === 'pending').length;
-  const approvedOrders = purchaseOrders.filter(po => po.status === 'approved').length;
+  const approvedOrders = purchaseOrders.filter(po => po.status === 'processing').length;
   const totalValue = purchaseOrders.reduce((sum, po) => sum + po.total, 0);
 
   return (
@@ -119,7 +87,7 @@ const PurchaseOrdersPage: React.FC = () => {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Approved</p>
+              <p className="text-sm font-medium text-gray-600">Processing</p>
               <p className="text-2xl font-bold text-green-600">{approvedOrders}</p>
             </div>
             <div className="bg-green-50 p-3 rounded-lg">
@@ -165,16 +133,16 @@ const PurchaseOrdersPage: React.FC = () => {
               {purchaseOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{order.id}</div>
+                    <div className="text-sm font-medium text-gray-900">{order.orderNumber}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{order.distributor}</div>
+                    <div className="text-sm text-gray-900">{order.customerName}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {new Date(order.date).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {order.items.length} items
+                    {order.products.length} items
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     NPR {order.total.toLocaleString()}
@@ -185,16 +153,26 @@ const PurchaseOrdersPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(order.expectedDelivery).toLocaleDateString()}
+                    Expected delivery date
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => setSelectedOrder(order)}
-                      className="text-blue-600 hover:text-blue-900 flex items-center"
-                    >
-                      <EyeIcon className="h-4 w-4 mr-1" />
-                      View
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => setSelectedOrder(order)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        <EyeIcon className="h-4 w-4 inline mr-1" />
+                        View
+                      </button>
+                      {order.status === 'pending' && (
+                        <button
+                          onClick={() => handleStatusUpdate(order.id, 'processing')}
+                          className="text-green-600 hover:text-green-900 text-sm"
+                        >
+                          Accept
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -282,7 +260,7 @@ const PurchaseOrdersPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-medium text-gray-500">Order ID</p>
-                  <p className="text-lg font-semibold text-gray-900">{selectedOrder.id}</p>
+                  <p className="text-lg font-semibold text-gray-900">{selectedOrder.orderNumber}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Status</p>
@@ -292,7 +270,7 @@ const PurchaseOrdersPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Distributor</p>
-                  <p className="text-lg font-semibold text-gray-900">{selectedOrder.distributor}</p>
+                  <p className="text-lg font-semibold text-gray-900">{selectedOrder.customerName}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Order Date</p>
@@ -305,14 +283,14 @@ const PurchaseOrdersPage: React.FC = () => {
               <div>
                 <h3 className="text-lg font-semibold mb-4">Items</h3>
                 <div className="space-y-3">
-                  {selectedOrder.items.map((item: any, index: number) => (
+                  {selectedOrder.products.map((item: any, index: number) => (
                     <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                       <div>
-                        <p className="font-medium text-gray-900">{item.product}</p>
+                        <p className="font-medium text-gray-900">{item.productName}</p>
                         <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-gray-900">NPR {item.unitPrice.toLocaleString()}</p>
+                        <p className="font-medium text-gray-900">NPR {item.price.toLocaleString()}</p>
                         <p className="text-sm text-gray-600">Total: NPR {item.total.toLocaleString()}</p>
                       </div>
                     </div>
@@ -329,12 +307,43 @@ const PurchaseOrdersPage: React.FC = () => {
                 </div>
               </div>
 
-              {selectedOrder.notes && (
+              {selectedOrder.deliveryAddress && (
                 <div>
-                  <p className="text-sm font-medium text-gray-500 mb-1">Notes</p>
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">{selectedOrder.notes}</p>
+                  <p className="text-sm font-medium text-gray-500 mb-1">Delivery Address</p>
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">{selectedOrder.deliveryAddress}</p>
                 </div>
               )}
+
+              {/* Status Update Actions */}
+              <div className="border-t pt-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Update Status</h4>
+                <div className="flex space-x-2">
+                  {selectedOrder.status === 'pending' && (
+                    <button
+                      onClick={() => handleStatusUpdate(selectedOrder.id, 'processing')}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      Accept Order
+                    </button>
+                  )}
+                  {selectedOrder.status === 'processing' && (
+                    <button
+                      onClick={() => handleStatusUpdate(selectedOrder.id, 'shipped')}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Mark as Shipped
+                    </button>
+                  )}
+                  {selectedOrder.status === 'shipped' && (
+                    <button
+                      onClick={() => handleStatusUpdate(selectedOrder.id, 'delivered')}
+                      className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      Mark as Delivered
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
