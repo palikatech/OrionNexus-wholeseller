@@ -16,7 +16,7 @@ import {
   ReceiptPercentIcon,
   DocumentChartBarIcon,
   EnvelopeIcon,
-  HandshakeIcon
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 
@@ -43,7 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const wholesalerNavItems = [
     { name: 'Dashboard', href: '/wholesaler/dashboard', icon: HomeIcon },
     { name: 'Products', href: '/wholesaler/products', icon: CubeIcon },
-    { name: 'Partnerships', href: '/wholesaler/partnerships', icon: HandshakeIcon },
+    { name: 'Partnerships', href: '/wholesaler/partnerships', icon: UserGroupIcon },
     { name: 'Sales', href: '/wholesaler/sales', icon: ShoppingCartIcon },
     { name: 'Purchase Orders', href: '/wholesaler/purchase-orders', icon: DocumentTextIcon },
     { name: 'Inventory', href: '/wholesaler/inventory', icon: ArchiveBoxIcon },
