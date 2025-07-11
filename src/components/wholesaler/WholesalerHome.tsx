@@ -1,6 +1,7 @@
 import React from 'react';
 import { useData } from '../../context/DataContext';
 import StatsCard from '../common/StatsCard';
+import POSIntegration from './POSIntegration';
 import { 
   CurrencyDollarIcon, 
   ShoppingCartIcon, 
@@ -314,6 +315,9 @@ const WholesalerHome: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* POS Integration Section */}
+      <POSIntegration />
     </div>
   );
 };

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
+import { usePOSSync } from '../../hooks/usePOSSync';
 import { PlusIcon, MagnifyingGlassIcon, EyeIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 
 const WholesalerProducts: React.FC = () => {
   const { products } = useData();
+  const { syncProductToPOS } = usePOSSync();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [filterBrand, setFilterBrand] = useState('');
@@ -12,6 +14,7 @@ const WholesalerProducts: React.FC = () => {
   const [sortBy, setSortBy] = useState('name');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [showProductModal, setShowProductModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -50,11 +53,26 @@ const WholesalerProducts: React.FC = () => {
     toast.success(`${product.name} added to sales`);
   };
 
+  const handleSyncToPOS = async (product: any) => {
+    const success = await syncProductToPOS(product);
+    if (success) {
+      toast.success(`${product.name} synced to POS successfully`);
+    }
+  };
+
+  const handleModalClose = (e: React.MouseEvent, closeModal: () => void) => {
+    if (e.target === e.currentTarget) {
+      closeModal();
+    }
+  };
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">My Products</h1>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2">
+        <button 
+          onClick={() => setShowAddModal(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+        >
           <PlusIcon className="h-5 w-5" />
           <span>Add Product</span>
         </button>
@@ -193,6 +211,12 @@ const WholesalerProducts: React.FC = () => {
                     >
                       Add to Sales
                     </button>
+                    <button
+                      onClick={() => handleSyncToPOS(product)}
+                      className="text-purple-600 hover:text-purple-900 text-sm"
+                    >
+                      Sync to POS
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -314,6 +338,12 @@ const WholesalerProducts: React.FC = () => {
                 Add to Sales
               </button>
               <button
+                onClick={() => handleSyncToPOS(selectedProduct)}
+                className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Sync to POS
+              </button>
+              <button
                 onClick={() => setShowProductModal(false)}
                 className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors"
               >
@@ -324,6 +354,80 @@ const WholesalerProducts: React.FC = () => {
         </div>
       )}
 
+      {/* Add Product Modal */}
+      {showAddModal && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => handleModalClose(e, () => setShowAddModal(false))}
+        >
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Add New Product</h2>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Brand *</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">SKU *</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price *</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Add Product
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {/* No Results */}
       {filteredProducts.length === 0 && (
         <div className="text-center py-12">
@@ -341,3 +445,7 @@ const WholesalerProducts: React.FC = () => {
 };
 
 export default WholesalerProducts;
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => handleModalClose(e, () => setShowProductModal(false))}
+        >
