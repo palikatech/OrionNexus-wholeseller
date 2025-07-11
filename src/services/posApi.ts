@@ -42,8 +42,8 @@ class POSApiService {
 
   constructor() {
     // Configure these based on your POS system
-    this.baseUrl = process.env.VITE_POS_API_URL || 'http://localhost:3001/api';
-    this.apiKey = process.env.VITE_POS_API_KEY || 'your-pos-api-key';
+    this.baseUrl = import.meta.env.VITE_POS_API_URL || 'http://localhost:3001/api';
+    this.apiKey = import.meta.env.VITE_POS_API_KEY || 'your-pos-api-key';
   }
 
   private async makeRequest<T>(
